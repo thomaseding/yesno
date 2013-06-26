@@ -8,9 +8,8 @@ include Data.IORef
 include Data.Word
 include Foreign.Marshal.Alloc
 include Foreign.Ptr
-include Foreign.Storable
+import Foreign.Storable
 include Prelude hiding ((.), (/), (<), (>))
-include System.Exit
 include System.Time
 
 
