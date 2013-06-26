@@ -3,18 +3,19 @@
 
 module Main where
 
-
-import Data.IORef
-import Data.Word
-import Foreign.Marshal.Alloc
-import Foreign.Ptr
-import Foreign.Storable
-import Prelude hiding ((.), (/))
-import System.Exit
-import System.Time
-
 #define if_(x) if(x)then do
 #define else_ else do
+#define include import
+
+include Data.IORef
+include Data.Word
+include Foreign.Marshal.Alloc
+include Foreign.Ptr
+include Foreign.Storable
+include Prelude hiding ((.), (/), (<), (>))
+include System.Exit
+include System.Time
+
 
 function :: b -> (a -> IO b) -> IO (a -> IO b)
 function = const(return)
@@ -67,8 +68,16 @@ ptr :: a -> Ptr a
 ptr = undefined
 
 
-static_cast :: (Integral b, Num a) => a -> b -> a
-static_cast _ = fromIntegral
+static_cast :: a
+static_cast = magic
+
+infixl <, >
+
+(<) :: a -> b -> b
+(<) _ x = x
+
+(>) :: (Num b, Integral a) => b -> a -> b
+(>) _ x = fromIntegral(x)
 
 
 epoch :: CalendarTime
@@ -76,7 +85,7 @@ epoch = CalendarTime { ctYear = 1970, ctMonth = January, ctDay = 1, ctHour = 0, 
 
 
 toSeconds :: TimeDiff -> Time_t
-toSeconds td = ((((((static_cast(time_t)(tdYear td) * 12) + static_cast(time_t)(tdMonth td) * 31) + static_cast(time_t)(tdDay td) * 24) + static_cast(time_t)(tdHour td) * 60) + static_cast(time_t)(tdMin td) * 60) + static_cast(time_t)(tdSec td * 60))
+toSeconds td = ((((((static_cast<time_t>(tdYear td) * 12) + static_cast<time_t>(tdMonth td) * 31) + static_cast<time_t>(tdDay td) * 24) + static_cast<time_t>(tdHour td) * 60) + static_cast<time_t>(tdMin td) * 60) + static_cast<time_t>(tdSec td * 60))
 
 
 sizeof = const()
@@ -123,12 +132,13 @@ translationUnit = do
         uncurry(poke)(p_seed, seed * 1103515245 + 12345);
         seed <- peek(p_seed);
         randmax <- readIORef(_RAND_MAX);
-        res <- runInstruction$ static_cast(int)(seed % (static_cast(unsigned_int)(randmax) + 1));
+        res <- runInstruction$ static_cast<int>(seed % (static_cast<unsigned_int>(randmax) + 1));
         return res;
     }
 
     rand <- function int $ \(param()->()) -> do {
-        return =<< withPointer(next, rand_r);
+        res <- withPointer(next, rand_r);
+        return res;
     }
 
     srand <- function void $ \(param(unsigned_int)->(seed)) -> do {
@@ -141,7 +151,7 @@ translationUnit = do
             epoch <- runInstruction$ toClockTime(epoch);
             diff <- runInstruction$ uncurry(diffClockTimes)(clokc_time, epoch);
             time <- runInstruction$ toSeconds(diff);
-            return (static_cast(time_t)(time));
+            return (static_cast<time_t>(time));
         }
         else_{
             magic;
@@ -150,11 +160,11 @@ translationUnit = do
 
     main <- function int $ \() -> do {
         seed <- time(0);
-        srand(static_cast(unsigned_int)(seed));
+        srand(static_cast<unsigned_int>(seed));
         n <- rand();
         randmax <- readIORef(_RAND_MAX);
         randmax2 <- runInstruction$ randmax / 2;
-        if_(n < randmax2) {
+        if_(n <= randmax2) {
             printf("%d\n", 0);
         }
         else_{
@@ -163,7 +173,7 @@ translationUnit = do
         return 0;
     }
 
-    exitCode <- main()
+    exitCode <- main();
     if_(exitCode == 0) {
         exitSuccess;
     }
