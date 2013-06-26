@@ -10,7 +10,13 @@ include Foreign.Marshal.Alloc
 include Foreign.Ptr
 import Foreign.Storable
 include Prelude hiding ((.), (/), (<), (>))
+include System.Exit
 include System.Time
+
+
+exit :: Int -> IO ()
+exit 0 = exitSuccess
+exit _ = exitFailure
 
 
 function :: b -> (a -> IO b) -> IO (a -> IO b)

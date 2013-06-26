@@ -6,6 +6,10 @@ module Main where
 #define if_(x) if(x)then do
 #define else_ else do
 #define include import
+#define int_
+#define unsigned_int_
+#define time_t_
+#define Exit_Code _1
 
 include Cppify
 include Data.IORef
@@ -29,16 +33,16 @@ translationUnit = do
     next <- static unsigned_int 1;
 
     rand_r <- function int $ \(param(ptr(unsigned_int))->(p_seed)) -> do {
-        seed <- peek(p_seed);
+        unsigned_int_ seed <- peek(p_seed);
         uncurry(poke)(p_seed, seed * 1103515245 + 12345);
         seed <- peek(p_seed);
-        randmax <- readIORef(_RAND_MAX);
-        res <- runInstruction$ static_cast<int>(seed % (static_cast<unsigned_int>(randmax) + 1));
+        int_ randmax <- readIORef(_RAND_MAX);
+        int_ res <- runInstruction$ static_cast<int>(seed % (static_cast<unsigned_int>(randmax) + 1));
         return res;
     }
 
     rand <- function int $ \(param()->()) -> do {
-        res <- withPointer(next, rand_r);
+        int_ res <- withPointer(next, rand_r);
         return res;
     }
 
@@ -48,23 +52,23 @@ translationUnit = do
 
     time <- function time_t $ \(param(ptr(time_t))->(timer)) -> do {
         if_(timer == 0) {
-            clokc_time <- getClockTime;
-            epoch <- runInstruction$ toClockTime(epoch);
-            diff <- runInstruction$ uncurry(diffClockTimes)(clokc_time, epoch);
-            time <- runInstruction$ toSeconds(diff);
+            time_t_ clokc_time <- getClockTime;
+            time_t_ epoch <- runInstruction$ toClockTime(epoch);
+            time_t_ diff <- runInstruction$ uncurry(diffClockTimes)(clokc_time, epoch);
+            time_t_ time <- runInstruction$ toSeconds(diff);
             return (static_cast<time_t>(time));
         }
         else_{
-            magic;
+            magic();
         }
     }
 
     main <- function int $ \() -> do {
-        seed <- time(0);
+        time_t_ seed <- time(0);
         srand(static_cast<unsigned_int>(seed));
-        n <- rand();
-        randmax <- readIORef(_RAND_MAX);
-        randmax2 <- runInstruction$ randmax / 2;
+        int_ n <- rand();
+        int_ randmax <- readIORef(_RAND_MAX);
+        int_ randmax2 <- runInstruction$ randmax / 2;
         if_(n <= randmax2) {
             printf("%d\n", 0);
         }
@@ -74,12 +78,13 @@ translationUnit = do
         return 0;
     }
 
-    exitCode <- main();
-    if_(exitCode == 0) {
-        exitSuccess;
+    Exit_Code <- static int 1
+    Exit_Code <- main();
+    if_(Exit_Code == 0) {
+        exit(0);
     }
     else_{
-        exitFailure;
+        exit(1);
     }
 
 
